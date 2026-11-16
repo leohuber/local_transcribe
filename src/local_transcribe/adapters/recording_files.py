@@ -1,9 +1,11 @@
 import tomllib
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, TextIO
 from uuid import uuid4
 
 from local_transcribe.domain.recording import RecordingError
+
+OUTPUT_DIRNAME = "tmp"
 
 
 def _is_checkout(path: Path) -> bool:
@@ -40,12 +42,18 @@ def find_checkout(*, source: Path | None = None, cwd: Path | None = None) -> Pat
     )
 
 
+def ensure_output_dir(checkout: Path) -> Path:
+    directory = checkout / OUTPUT_DIRNAME
+    directory.mkdir(exist_ok=True)
+    if not directory.resolve().is_relative_to(checkout.resolve()):
+        raise RecordingError("The output directory is outside the checkout.")
+    return directory
+
+
 def create_recording_file(checkout: Path) -> tuple[Path, BinaryIO]:
-    directory = checkout / ".tmp"
+    directory = checkout / OUTPUT_DIRNAME
     try:
-        directory.mkdir(exist_ok=True)
-        if not directory.resolve().is_relative_to(checkout.resolve()):
-            raise RecordingError("The recording directory is outside the checkout.")
+        directory = ensure_output_dir(checkout)
         for _ in range(10):
             path = directory / f"recording-{uuid4().hex}.wav"
             try:
@@ -59,3 +67,24 @@ def create_recording_file(checkout: Path) -> tuple[Path, BinaryIO]:
             f"Unable to create a recording in {directory}: {exc}"
         ) from exc
     raise RecordingError(f"Unable to create a unique recording in {directory}.")
+
+
+def create_transcript_file(checkout: Path, stem: str) -> tuple[Path, TextIO]:
+    try:
+        directory = ensure_output_dir(checkout)
+        candidates = [f"{stem}.txt"] + [
+            f"{stem}-{uuid4().hex[:8]}.txt" for _ in range(10)
+        ]
+        for name in candidates:
+            path = directory / name
+            try:
+                return path, path.open("x", encoding="utf-8")
+            except FileExistsError:
+                continue
+    except RecordingError:
+        raise
+    except OSError as exc:
+        raise RecordingError(
+            f"Unable to create a transcript in {checkout / OUTPUT_DIRNAME}: {exc}"
+        ) from exc
+    raise RecordingError(f"Unable to create a unique transcript for {stem}.")

@@ -4,7 +4,7 @@ applyTo: "src/local_transcribe/**/*.py"
 
 # Architecture: local_transcribe
 
-`local_transcribe` currently prints a greeting. Transcription and a Click CLI are not implemented yet. The intended application uses Click and Rich to transcribe local audio with `mlx_audio`, using a small **ports-and-adapters** architecture: a reusable core with no knowledge of Click, Rich, or MLX, plus thin adapters and one composition root. Do not turn this into a plugin framework.
+`local_transcribe` is a Click CLI that records two audio inputs (`record`) and transcribes WAV files with speaker labels via `mlx_audio` (`transcribe`). The application uses Click and Rich to transcribe local audio with `mlx_audio`, using a small **ports-and-adapters** architecture: a reusable core with no knowledge of Click, Rich, or MLX, plus thin adapters and one composition root. Do not turn this into a plugin framework.
 
 ## Current foundation
 

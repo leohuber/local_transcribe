@@ -1,4 +1,4 @@
-from local_transcribe.application.ports import RecordingUseCase
+from local_transcribe.application.ports import RecordingUseCase, TranscriptionUseCase
 
 
 def main() -> None:
@@ -7,7 +7,7 @@ def main() -> None:
     from local_transcribe.cli.commands import create_cli
 
     try:
-        result = create_cli(_recording)(standalone_mode=False)
+        result = create_cli(_recording, _transcription)(standalone_mode=False)
     except click.ClickException as exc:
         exc.show()
         raise SystemExit(exc.exit_code) from exc
@@ -25,3 +25,11 @@ def _recording() -> RecordingUseCase:
 
     capture = SoundDeviceCapture()
     return Recording(capture, SoundDeviceRecorder(capture))
+
+
+def _transcription() -> TranscriptionUseCase:
+    from local_transcribe.adapters.mlx_backend import MlxTranscriber
+    from local_transcribe.adapters.transcript_files import FileTranscriptStore
+    from local_transcribe.application.transcription import Transcription
+
+    return Transcription(MlxTranscriber(), FileTranscriptStore())

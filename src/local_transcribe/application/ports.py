@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Protocol
 
 from local_transcribe.domain.recording import (
@@ -5,6 +6,11 @@ from local_transcribe.domain.recording import (
     InputLevel,
     RecordingRequest,
     RecordingResult,
+)
+from local_transcribe.domain.transcription import (
+    Transcript,
+    TranscriptionRequest,
+    TranscriptionResult,
 )
 
 
@@ -22,3 +28,15 @@ class Recorder(Protocol):
 
 class RecordingUseCase(InputDevices, Recorder, Protocol):
     pass
+
+
+class Transcriber(Protocol):
+    def transcribe(self, request: TranscriptionRequest) -> Transcript: ...
+
+
+class TranscriptStore(Protocol):
+    def save(self, audio_path: Path, text: str) -> Path: ...
+
+
+class TranscriptionUseCase(Protocol):
+    def transcribe(self, request: TranscriptionRequest) -> TranscriptionResult: ...

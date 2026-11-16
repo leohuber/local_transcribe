@@ -1,9 +1,11 @@
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import click
+from rich.console import Console
 
-from local_transcribe.application.ports import RecordingUseCase
+from local_transcribe.application.ports import RecordingUseCase, TranscriptionUseCase
 from local_transcribe.cli.levels import TERMINAL_INTERVAL, LevelDisplay
 from local_transcribe.domain.recording import (
     DeviceSelectionError,
@@ -11,6 +13,11 @@ from local_transcribe.domain.recording import (
     RecordingError,
     RecordingRequest,
     RecordingResult,
+)
+from local_transcribe.domain.transcription import (
+    DEFAULT_MODEL,
+    TranscriptionError,
+    TranscriptionRequest,
 )
 
 
@@ -49,17 +56,31 @@ def _record_until_stopped(
             raise
 
 
-def create_cli(recording_factory: Callable[[], RecordingUseCase]) -> click.Group:
-    @click.group(invoke_without_command=True)
+def create_cli(
+    recording_factory: Callable[[], RecordingUseCase],
+    transcription_factory: Callable[[], TranscriptionUseCase],
+) -> click.Group:
+    @click.group(
+        invoke_without_command=True,
+        context_settings={"help_option_names": ["-h", "--help"]},
+    )
     @click.pass_context
     def cli(context: click.Context) -> None:
-        """Record local audio."""
+        """Record and transcribe local audio on this machine.
+
+        Run a subcommand with -h or --help for details.
+        """
         if context.invoked_subcommand is None:
             click.echo("Hello from local-transcribe!")
 
     @cli.command()
     def record() -> None:
-        """Record and mix two audio input devices."""
+        """Record and mix two audio input devices into a WAV file.
+
+        Lists input devices, prompts for two distinct device IDs, shows live
+        levels, and records until Ctrl+C. The mono WAV is saved in the project
+        checkout's tmp/ directory.
+        """
         try:
             recording = recording_factory()
             while True:
@@ -92,5 +113,40 @@ def create_cli(recording_factory: Callable[[], RecordingUseCase]) -> click.Group
             if exc.incomplete_path is not None:
                 message += f"\nIncomplete recording: {exc.incomplete_path}"
             raise click.ClickException(message) from exc
+
+    @cli.command()
+    @click.argument(
+        "audio",
+        type=click.Path(exists=True, dir_okay=False, readable=True, path_type=Path),
+    )
+    @click.option(
+        "--model",
+        default=DEFAULT_MODEL,
+        show_default=True,
+        help="Hugging Face model ID or local path of a Nemotron Transcribe model.",
+    )
+    def transcribe(audio: Path, model: str) -> None:
+        """Transcribe AUDIO (a WAV file) with speaker labels.
+
+        Prints each speaker turn as "Speaker N: text" and saves the transcript
+        as a text file in the project checkout's tmp/ directory. The model is
+        downloaded on first use.
+        """
+        console = Console(stderr=True)
+        try:
+            with console.status(f"Transcribing {audio.name} with {model}..."):
+                result = transcription_factory().transcribe(
+                    TranscriptionRequest(audio, model)
+                )
+        except TranscriptionError as exc:
+            raise click.ClickException(str(exc)) from exc
+        click.echo(result.transcript.render())
+        if result.transcript.truncated:
+            click.echo(
+                "Warning: the model reached its output limit; "
+                "the transcript may be incomplete.",
+                err=True,
+            )
+        click.echo(f"Transcript saved: {result.saved_path}")
 
     return cli

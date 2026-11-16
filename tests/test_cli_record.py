@@ -31,7 +31,7 @@ class FakeRecording:
         self.requests.append(request)
         if self.errors:
             raise self.errors.pop(0)
-        return RecordingResult(Path("/checkout/.tmp/recording.wav"))
+        return RecordingResult(Path("/checkout/tmp/recording.wav"))
 
     def latest_levels(self) -> tuple[InputLevel, ...]:
         return ()
@@ -43,7 +43,7 @@ class FakeRecording:
 class RecordCliTests(unittest.TestCase):
     def setUp(self) -> None:
         self.recording = FakeRecording()
-        self.cli = create_cli(lambda: self.recording)
+        self.cli = create_cli(lambda: self.recording, self.fail)
         self.runner = CliRunner()
 
     def test_lists_inputs_and_retries_malformed_invalid_and_duplicate_ids(self) -> None:
@@ -57,7 +57,7 @@ class RecordCliTests(unittest.TestCase):
         self.assertEqual(self.recording.requests, [RecordingRequest(2, 5)])
         self.assertIn("Starting recording. Press Ctrl+C to stop.", result.output)
         self.assertIn("Levels: 2: Mic [", result.output)
-        self.assertIn("Recording saved: /checkout/.tmp/recording.wav", result.output)
+        self.assertIn("Recording saved: /checkout/tmp/recording.wav", result.output)
 
     def test_changed_device_selection_can_be_corrected(self) -> None:
         self.recording.errors = [DeviceSelectionError("Device 5 disappeared.")]
@@ -97,7 +97,7 @@ class RecordCliTests(unittest.TestCase):
         def unexpected() -> FakeRecording:
             self.fail("audio dependencies should be lazy")
 
-        cli = create_cli(unexpected)
+        cli = create_cli(unexpected, unexpected)
         for args in ([], ["--help"], ["record", "--help"]):
             with self.subTest(args=args):
                 result = self.runner.invoke(cli, args)

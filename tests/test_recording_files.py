@@ -47,7 +47,7 @@ class RecordingFilesTests(unittest.TestCase):
     def test_creates_directory_and_never_overwrites_a_collision(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            directory = root / ".tmp"
+            directory = root / "tmp"
             directory.mkdir()
             existing = directory / f"recording-{UUID(int=1).hex}.wav"
             existing.write_bytes(b"existing")
@@ -80,7 +80,7 @@ class RecordingFilesTests(unittest.TestCase):
             checkout, outside = root / "checkout", root / "outside"
             checkout.mkdir()
             outside.mkdir()
-            (checkout / ".tmp").symlink_to(outside, target_is_directory=True)
+            (checkout / "tmp").symlink_to(outside, target_is_directory=True)
             with self.assertRaisesRegex(RecordingError, "outside the checkout"):
                 create_recording_file(checkout)
             self.assertEqual(list(outside.iterdir()), [])

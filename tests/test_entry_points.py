@@ -128,7 +128,7 @@ with tempfile.TemporaryDirectory() as temporary:
     capture = FakeCapture(clock)
     recorder = SoundDeviceRecorder(capture, checkout=lambda: Path(temporary), clock=clock)
     capture.script = partial(capture.emit, count=4, stop=recorder.stop)
-    command = create_cli(lambda: Recording(Devices(), recorder))
+    command = create_cli(lambda: Recording(Devices(), recorder), lambda: None)
     result = CliRunner().invoke(command, ['record'], input='2\\n5\\n')
     if result.exit_code or 'Recording saved:' not in result.output:
         raise SystemExit(result.output or repr(result.exception))
