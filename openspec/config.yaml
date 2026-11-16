@@ -1,0 +1,6 @@
+schema: spec-driven
+githubCopilot:
+  cloudAgent: false
+
+context: |
+  Build a command line tool with rich and click for transcribing local audio files with mlx_audio.

@@ -1,0 +1,45 @@
+[importlinter]
+root_package = local_transcribe
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Dependency direction
+type = layers
+containers =
+    local_transcribe
+layers =
+    bootstrap
+    cli | adapters
+    application
+    domain
+exhaustive = true
+
+[importlinter:contract:core-framework-isolation]
+name = Core is free of CLI and MLX frameworks
+type = forbidden
+source_modules =
+    local_transcribe.application
+    local_transcribe.domain
+forbidden_modules =
+    click
+    rich
+    mlx_audio
+    mlx
+
+[importlinter:contract:cli-mlx-isolation]
+name = CLI does not touch MLX
+type = forbidden
+source_modules =
+    local_transcribe.cli
+forbidden_modules =
+    mlx_audio
+    mlx
+
+[importlinter:contract:adapter-presentation-isolation]
+name = Adapters do not touch presentation
+type = forbidden
+source_modules =
+    local_transcribe.adapters
+forbidden_modules =
+    click
+    rich

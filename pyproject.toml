@@ -1,0 +1,32 @@
+[project]
+name = "local-transcribe"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Leo Huber", email = "leo_huber@icloud.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "click>=8.5.1",
+    "mlx-audio>=0.6.5",
+    "numpy>=2.5.5",
+    "pyrefly>=0.60.0",
+    "rich>=15.0.0",
+    "sounddevice>=0.5.6",
+    "soxr>=1.1.0",
+]
+
+[project.scripts]
+local-transcribe = "local_transcribe.bootstrap:main"
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.16",
+    "pyrefly>=1.4.1",
+    "ruff>=0.17.5",
+]
